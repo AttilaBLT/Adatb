@@ -7,6 +7,7 @@ function printMenu(){
     {
         $menu = str_replace('::login',' <a href="profile.php" class="nav-link">Profil</a>
                                         <a href="kosar.php" class="nav-link">Kosár tartalma</a>
+                                        <a href="faq.php" class="nav-link">FAQ</a>
                                         <a class="nav-link" href="php/logout.php">Kilépés</a>',$menu);  
     } 
     else
