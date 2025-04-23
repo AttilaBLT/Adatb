@@ -49,7 +49,6 @@ $stmt = $connect->prepare("SELECT w.*, v.server_specs
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
 <h1>Weboldalak</h1>
 
 <form method="POST">
