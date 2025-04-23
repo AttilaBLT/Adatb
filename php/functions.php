@@ -11,6 +11,7 @@ function printMenu(){
                                         <a href="webstorage.php" class="nav-link">Webstorage</a>
                                         <a href="vps.php" class="nav-link">VPS</a>
                                         <a href="website.php" class="nav-link">Website</a>
+                                        <a href="service.php" class="nav-link">Service</a>
                                         <a class="nav-link" href="php/logout.php">Kilépés</a>',$menu);  
     } 
     else

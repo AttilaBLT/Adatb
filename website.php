@@ -79,14 +79,11 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <table border="1">
     <tr>
-        <th>User ID</th>
         <th>Szerver</th>
         <th>Cím</th>
-        <th></th>
     </tr>
     <?php foreach ($rows as $row): ?>
     <tr>
-        <td><?= $row['USER_ID'] ?></td>
         <td><?= $row['SERVER_SPECS'] ?? 'None' ?></td>
         <td><?= $row['ADDRESS'] ?></td>
         <td>

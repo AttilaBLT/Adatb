@@ -61,7 +61,6 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <th>Név</th>
         <th>Leírás</th>
         <th>Tárhely</th>
-        <th></th>
     </tr>
     <?php foreach ($rows as $row): ?>
     <tr>

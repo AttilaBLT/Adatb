@@ -53,7 +53,6 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <table border="1">
     <tr>
         <th>Szerver specifikációk</th>
-        <th></th>
     </tr>
     <?php foreach ($rows as $row): ?>
     <tr>
