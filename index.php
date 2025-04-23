@@ -3,7 +3,7 @@ require_once 'php/connection.php';
 require_once 'php/functions.php';
 printMenu();
 
-$stmt = $connect->prepare("SELECT * FROM ATTILA.USERS");
+$stmt = $connect->prepare("SELECT * FROM ATTILA.FAQ");
     $stmt->execute();
 
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -11,11 +11,7 @@ $stmt = $connect->prepare("SELECT * FROM ATTILA.USERS");
         echo "Nincs adat a táblában.";
     } else {
         foreach ($rows as $row) {
-            echo sprintf('<p>%s: %s, jelszó: %s</p>', $row['USERNAME'], $row['EMAIL'], $row['PASSWORD_HASH']);
+            echo sprintf('<p>Kérdés:%s, Válasz: %s</p>', $row['QUESTION'], $row['ANSWER']);
         }
     }
-
-
-    var_dump($_SESSION)
-
 ?>
