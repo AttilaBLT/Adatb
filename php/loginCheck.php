@@ -24,12 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
     }
 }
 
-if (isset($_SESSION['errormessage']))
-{
-    unset($_SESSION['errormessage']);
-    header('Location: ../login.php?="Helytelen email vagy jelszó!"');
-} 
-else 
-{
-    header('Location: ../index.php?=Sikeres bejelentkezés!');
+if (isset($_SESSION['errormessage'])) {
+    header('Location: ../login.php?error=Helytelen email vagy jelszó!');
+} else {
+    header('Location: ../index.php');
 }
