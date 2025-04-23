@@ -1,0 +1,27 @@
+<main>
+    <div class="registration-form">
+        <h2>Profil módosítása</h2>
+        <form action="profile_edit_submit.php" method="post">
+            <div class="form-group">
+            <div class="form-group">
+                <label for="felhasznalonev">Felhasználónév:</label>
+                <input value="::felhasznalonev" type="text" id="felhasznalonev" class="adatok" name="felhasznalonev" required >
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input value="::email" type="email" id="email" class="adatok" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="jelszo">Új jelszó:</label>
+                <input type="password" id="jelszo" class="adatok" name="jelszo" required>
+            </div>
+            <div class="form-group">
+                <label for="confirm-password">Jelszó megerősítése:</label>
+                <input type="password" id="confirm-password" class="adatok" name="confirm-password" required>
+            </div>
+            <button type="submit">Mentés</button>
+        </form>
+    </div>
+</main>  
+</body>
+</html>
