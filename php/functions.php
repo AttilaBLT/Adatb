@@ -5,7 +5,8 @@ function printMenu(){
     $menu = file_get_contents('html/header.html');    
     if (isset($_SESSION['user']['id']))
     {
-        $menu = str_replace('::login',' <a href="profile.php" class="nav-link">Profil</a>
+        $menu = str_replace('::login',' <a href="index.php" class="nav-link">Főoldal</a>
+                                        <a href="profile.php" class="nav-link">Profil</a>                              
                                         <a href="kosar.php" class="nav-link">Kosár tartalma</a>
                                         <a href="faq.php" class="nav-link">FAQ</a>
                                         <a href="webstorage.php" class="nav-link">Webstorage</a>

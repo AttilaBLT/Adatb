@@ -10,7 +10,7 @@ $tns = "
   )";
 $username = "ATTILA";
 $password = "Attila";
-$db = "oci:dbname=" . $tns;
+$db = "oci:dbname=" . $tns . ";charset=AL32UTF8";
 
 try {
     $connect = new PDO($db, $username, $password);
@@ -19,7 +19,3 @@ try {
     echo "Hiba: " . $e->getMessage();
 }
 ?>
-
-
-
-

@@ -49,8 +49,7 @@ $stmt = $connect->prepare("SELECT w.*, v.server_specs
 $stmt->execute();
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
-
-<h1>Websites</h1>
+<h1>Weboldalak</h1>
 
 <form method="POST">
     <h2><?= isset($_GET['edit']) ? 'Update' : 'Create' ?></h2>
@@ -58,7 +57,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     Szerver: 
     <select name="server_id">
-        <option value="">-- Select Server --</option>
+        <option value="">-- Válasszon ki egy szervert --</option>
         <?php foreach ($vpsOptions as $vps): ?>
             <option value="<?= $vps['ID'] ?>" 
                 <?= isset($editRow['SERVER_ID']) && $editRow['SERVER_ID'] == $vps['ID'] ? 'selected' : '' ?>>
@@ -71,24 +70,27 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     <?php if (isset($_GET['edit'])): ?>
         <input type="submit" name="update" value="Update">
-        <a href="?">Cancel</a>
+        <a href="?">Mégse</a>
     <?php else: ?>
-        <input type="submit" name="create" value="Create">
+        <input type="submit" name="create" value="Hozzáadás">
     <?php endif; ?>
 </form>
 
 <table border="1">
     <tr>
+        <th>User ID</th>
         <th>Szerver</th>
         <th>Cím</th>
+        <th></th>
     </tr>
     <?php foreach ($rows as $row): ?>
     <tr>
+        <td><?= $row['USER_ID'] ?></td>
         <td><?= $row['SERVER_SPECS'] ?? 'None' ?></td>
         <td><?= $row['ADDRESS'] ?></td>
         <td>
-            <a href="?edit=<?= $row['ID'] ?>">Edit</a>
-            <a href="?delete=<?= $row['ID'] ?>" onclick="return confirm('Are you sure?')">Delete</a>
+            <a href="?edit=<?= $row['ID'] ?>">Szerkesztés</a>
+            <a href="?delete=<?= $row['ID'] ?>" onclick="return confirm('Biztos vagy benne?')">Törlés</a>
         </td>
     </tr>
     <?php endforeach; ?>
