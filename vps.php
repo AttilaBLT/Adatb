@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $server_specs = sanitizeInput($_POST['server_specs']);
         
         if (empty($server_specs)) {
-            $error = "A szerver specifikációk mező kitöltése kötelező!";
+            $error = "A szerver specifikáció megadása kötelező!";
         } else {
             if (isset($_POST['create'])) {
                 if (createVPS($server_specs)) {
@@ -114,13 +114,12 @@ printMenu();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPS Kezelés</title>
+    <title>VPS Kezelése</title>
     <style>
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; }
-        .form-group input[type="text"],
-        .form-group textarea { width: 100%; padding: 8px; }
+        .form-group input[type="text"] { width: 100%; padding: 8px; }
         .btn { padding: 8px 15px; cursor: pointer; }
         .error { color: red; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -132,7 +131,7 @@ printMenu();
 </head>
 <body>
     <div class="container">
-        <h1>VPS Kezelés</h1>
+        <h1>VPS Kezelése</h1>
 
         <?php if (isset($error)): ?>
             <div class="error"><?= $error ?></div>
@@ -143,7 +142,7 @@ printMenu();
             <input type="hidden" name="id" value="<?= $editRow['ID'] ?? '' ?>">
             
             <div class="form-group">
-                <label for="server_specs">Szerver specifikációk:</label>
+                <label for="server_specs">Szerver specifikáció:</label>
                 <input type="text" id="server_specs" name="server_specs" required 
                        value="<?= $editRow['SERVER_SPECS'] ?? '' ?>">
             </div>
@@ -159,7 +158,7 @@ printMenu();
         <table>
             <thead>
                 <tr>
-                    <th>Szerver specifikációk</th>
+                    <th>Szerver specifikáció</th>
                     <th>Műveletek</th>
                 </tr>
             </thead>

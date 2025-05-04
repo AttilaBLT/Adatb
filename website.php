@@ -50,9 +50,10 @@ function getWebsite($id) {
 function getAllWebsites() {
     global $connect;
     try {
-        $stmt = $connect->prepare("SELECT w.*, v.server_specs 
+        $stmt = $connect->prepare("SELECT w.*, v.server_specs, u.username 
                                  FROM ATTILA.Website w 
                                  LEFT JOIN ATTILA.VPS v ON w.server_id = v.id 
+                                 LEFT JOIN ATTILA.Users u ON w.user_id = u.user_id
                                  ORDER BY w.id");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -198,7 +199,7 @@ printMenu();
         <table>
             <thead>
                 <tr>
-                    <th>Felhasználó ID</th>
+                    <th>Felhasználó</th>
                     <th>Szerver</th>
                     <th>Cím</th>
                     <th>Műveletek</th>
@@ -212,7 +213,7 @@ printMenu();
                 <?php else: ?>
                     <?php foreach ($rows as $row): ?>
                         <tr>
-                            <td><?= htmlspecialchars($row['USER_ID']) ?></td>
+                            <td><?= htmlspecialchars($row['USERNAME']) ?></td>
                             <td><?= htmlspecialchars($row['SERVER_SPECS'] ?? 'Nincs') ?></td>
                             <td><?= htmlspecialchars($row['ADDRESS']) ?></td>
                             <td class="actions">

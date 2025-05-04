@@ -13,6 +13,8 @@ function printMenu(){
                                         <a href="vps.php" class="nav-link">VPS</a>
                                         <a href="website.php" class="nav-link">Website</a>
                                         <a href="service.php" class="nav-link">Service</a>
+                                        <a href="subscription.php" class="nav-link">Subscription</a>
+                                        <a href="payment.php" class="nav-link">Payment</a>
                                         <a class="nav-link" href="php/logout.php">Kilépés</a>',$menu);  
     } 
     else
