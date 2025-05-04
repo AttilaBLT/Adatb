@@ -2,29 +2,29 @@
 require_once 'php/connection.php';
 require_once 'php/functions.php';
 
-function createWebStorage($name, $description, $storage_space) {
+function createWebstorage($storage_space) {
     global $connect;
     try {
-        $stmt = $connect->prepare("INSERT INTO ATTILA.Webstorage (name, description, storage_space) VALUES (?, ?, ?)");
-        return $stmt->execute([$name, $description, $storage_space]);
+        $stmt = $connect->prepare("INSERT INTO ATTILA.Webstorage (storage_space) VALUES (?)");
+        return $stmt->execute([$storage_space]);
     } catch (PDOException $e) {
         error_log("Webstorage creation error: " . $e->getMessage());
         return false;
     }
 }
 
-function updateWebStorage($id, $name, $description, $storage_space) {
+function updateWebstorage($id, $storage_space) {
     global $connect;
     try {
-        $stmt = $connect->prepare("UPDATE ATTILA.Webstorage SET name = ?, description = ?, storage_space = ? WHERE id = ?");
-        return $stmt->execute([$name, $description, $storage_space, $id]);
+        $stmt = $connect->prepare("UPDATE ATTILA.Webstorage SET storage_space = ? WHERE id = ?");
+        return $stmt->execute([$storage_space, $id]);
     } catch (PDOException $e) {
         error_log("Webstorage update error: " . $e->getMessage());
         return false;
     }
 }
 
-function deleteWebStorage($id) {
+function deleteWebstorage($id) {
     global $connect;
     try {
         $stmt = $connect->prepare("DELETE FROM ATTILA.Webstorage WHERE id = ?");
@@ -35,7 +35,7 @@ function deleteWebStorage($id) {
     }
 }
 
-function getWebStorage($id) {
+function getWebstorage($id) {
     global $connect;
     try {
         $stmt = $connect->prepare("SELECT * FROM ATTILA.Webstorage WHERE id = ?");
@@ -47,7 +47,7 @@ function getWebStorage($id) {
     }
 }
 
-function getAllWebStorage() {
+function getAllWebstorages() {
     global $connect;
     try {
         $stmt = $connect->prepare("SELECT * FROM ATTILA.Webstorage ORDER BY id");
@@ -65,15 +65,13 @@ function sanitizeInput($data) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create']) || isset($_POST['update'])) {
-        $name = sanitizeInput($_POST['name']);
-        $description = sanitizeInput($_POST['description']);
-        $storage_space = (int)$_POST['storage_space'];
+        $storage_space = sanitizeInput($_POST['storage_space']);
         
-        if (empty($name) || $storage_space <= 0) {
-            $error = "A név és a tárhely mezők kitöltése kötelező, és a tárhelynek pozitív számnak kell lennie!";
+        if (empty($storage_space)) {
+            $error = "A tárhely méret megadása kötelező!";
         } else {
             if (isset($_POST['create'])) {
-                if (createWebStorage($name, $description, $storage_space)) {
+                if (createWebstorage($storage_space)) {
                     header("Location: " . $_SERVER['PHP_SELF']);
                     exit();
                 } else {
@@ -81,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             } else {
                 $id = (int)$_POST['id'];
-                if (updateWebStorage($id, $name, $description, $storage_space)) {
+                if (updateWebstorage($id, $storage_space)) {
                     header("Location: " . $_SERVER['PHP_SELF']);
                     exit();
                 } else {
@@ -92,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 } elseif (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    if (deleteWebStorage($id)) {
+    if (deleteWebstorage($id)) {
         header("Location: " . $_SERVER['PHP_SELF']);
         exit();
     } else {
@@ -103,10 +101,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $editRow = null;
 if (isset($_GET['edit'])) {
     $id = (int)$_GET['edit'];
-    $editRow = getWebStorage($id);
+    $editRow = getWebstorage($id);
 }
 
-$rows = getAllWebStorage();
+$rows = getAllWebstorages();
 
 printMenu();
 ?>
@@ -116,14 +114,12 @@ printMenu();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webstorage Kezelés</title>
+    <title>Tárhelyek Kezelése</title>
     <style>
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; }
-        .form-group input[type="text"],
-        .form-group input[type="number"],
-        .form-group textarea { width: 100%; padding: 8px; }
+        .form-group input[type="text"] { width: 100%; padding: 8px; }
         .btn { padding: 8px 15px; cursor: pointer; }
         .error { color: red; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -135,7 +131,7 @@ printMenu();
 </head>
 <body>
     <div class="container">
-        <h1>Webstorage Kezelés</h1>
+        <h1>Tárhelyek Kezelése</h1>
 
         <?php if (isset($error)): ?>
             <div class="error"><?= $error ?></div>
@@ -146,20 +142,8 @@ printMenu();
             <input type="hidden" name="id" value="<?= $editRow['ID'] ?? '' ?>">
             
             <div class="form-group">
-                <label for="name">Név:</label>
-                <input type="text" id="name" name="name" required 
-                       value="<?= $editRow['NAME'] ?? '' ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="description">Leírás:</label>
-                <input type="text" id="description" name="description" 
-                       value="<?= $editRow['DESCRIPTION'] ?? '' ?>">
-            </div>
-            
-            <div class="form-group">
-                <label for="storage_space">Tárhely (MB):</label>
-                <input type="number" id="storage_space" name="storage_space" required min="1" 
+                <label for="storage_space">Tárhely méret:</label>
+                <input type="text" id="storage_space" name="storage_space" required 
                        value="<?= $editRow['STORAGE_SPACE'] ?? '' ?>">
             </div>
             
@@ -174,22 +158,18 @@ printMenu();
         <table>
             <thead>
                 <tr>
-                    <th>Név</th>
-                    <th>Leírás</th>
-                    <th>Tárhely (MB)</th>
+                    <th>Tárhely méret</th>
                     <th>Műveletek</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($rows)): ?>
                     <tr>
-                        <td colspan="4">Nincsenek tárhely bejegyzések.</td>
+                        <td colspan="2">Nincsenek tárhely bejegyzések.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($rows as $row): ?>
                         <tr>
-                            <td><?= htmlspecialchars($row['NAME']) ?></td>
-                            <td><?= htmlspecialchars($row['DESCRIPTION']) ?></td>
                             <td><?= htmlspecialchars($row['STORAGE_SPACE']) ?></td>
                             <td class="actions">
                                 <a href="?edit=<?= $row['ID'] ?>" class="btn">Szerkesztés</a>
