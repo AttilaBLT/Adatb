@@ -1,120 +1,274 @@
 <?php
 require_once 'php/connection.php';
 require_once 'php/functions.php';
-printMenu();
 
-$vpsStmt = $connect->prepare("SELECT id, server_specs FROM ATTILA.VPS ORDER BY id");
-$vpsStmt->execute();
-$vpsOptions = $vpsStmt->fetchAll(PDO::FETCH_ASSOC);
+function createService($price, $service_type, $vps_id, $webstorage_id) {
+    global $connect;
+    try {
+        error_log("Creating service with params: price=$price, type=$service_type, vps=$vps_id, ws=$webstorage_id");
+        $stmt = $connect->prepare("INSERT INTO ATTILA.Service (price, service_type, vps_id, webstorage_id) VALUES (?, ?, ?, ?)");
+        $result = $stmt->execute([$price, $service_type, $vps_id ?: null, $webstorage_id ?: null]);
+        if (!$result) {
+            error_log("Service creation failed: " . implode(", ", $stmt->errorInfo()));
+        }
+        return $result;
+    } catch (PDOException $e) {
+        error_log("Service creation error: " . $e->getMessage());
+        error_log("SQL State: " . $e->getCode());
+        error_log("Error Info: " . implode(", ", $stmt->errorInfo()));
+        return false;
+    }
+}
 
-$webstorageStmt = $connect->prepare("SELECT id, storage_space FROM ATTILA.Webstorage ORDER BY id");
-$webstorageStmt->execute();
-$webstorageOptions = $webstorageStmt->fetchAll(PDO::FETCH_ASSOC);
+function updateService($id, $price, $service_type, $vps_id, $webstorage_id) {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("UPDATE ATTILA.Service SET price = ?, service_type = ?, vps_id = ?, webstorage_id = ? WHERE id = ?");
+        return $stmt->execute([$price, $service_type, $vps_id ?: null, $webstorage_id ?: null, $id]);
+    } catch (PDOException $e) {
+        error_log("Service update error: " . $e->getMessage());
+        return false;
+    }
+}
+
+function deleteService($id) {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("DELETE FROM ATTILA.Service WHERE id = ?");
+        return $stmt->execute([$id]);
+    } catch (PDOException $e) {
+        error_log("Service deletion error: " . $e->getMessage());
+        return false;
+    }
+}
+
+function getService($id) {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("SELECT * FROM ATTILA.Service WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Service retrieval error: " . $e->getMessage());
+        return false;
+    }
+}
+
+function getAllServices() {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("SELECT s.*, v.server_specs, w.storage_space as webstorage_size 
+                                 FROM ATTILA.Service s
+                                 LEFT JOIN ATTILA.VPS v ON s.vps_id = v.id 
+                                 LEFT JOIN ATTILA.Webstorage w ON s.webstorage_id = w.id
+                                 ORDER BY s.id");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Service list retrieval error: " . $e->getMessage());
+        return [];
+    }
+}
+
+function getVPSServers() {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("SELECT id, server_specs FROM ATTILA.VPS ORDER BY id");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("VPS list retrieval error: " . $e->getMessage());
+        return [];
+    }
+}
+
+function getWebStorageOptions() {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("SELECT id, storage_space FROM ATTILA.Webstorage ORDER BY id");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Webstorage list retrieval error: " . $e->getMessage());
+        return [];
+    }
+}
+
+function sanitizeInput($data) {
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['create'])) {
-        $stmt = $connect->prepare("INSERT INTO ATTILA.Service (price, service_type, vps_id, webstorage_id) VALUES (?, ?, ?, ?)");
-        $stmt->execute([
-            $_POST['price'],
-            $_POST['service_type'],
-            $_POST['vps_id'] ?: null,
-            $_POST['webstorage_id'] ?: null
-        ]);
+    if (isset($_POST['create']) || isset($_POST['update'])) {
+        $price = (float)$_POST['price'];
+        $service_type = sanitizeInput($_POST['service_type']);
+        $vps_id = !empty($_POST['vps_id']) ? (int)$_POST['vps_id'] : null;
+        $webstorage_id = !empty($_POST['webstorage_id']) ? (int)$_POST['webstorage_id'] : null;
         
-    } elseif (isset($_POST['update'])) {
-        $stmt = $connect->prepare("UPDATE ATTILA.Service SET price = ?, service_type = ?, vps_id = ?, webstorage_id = ? WHERE id = ?");
-        $stmt->execute([
-            $_POST['price'],
-            $_POST['service_type'],
-            $_POST['vps_id'] ?: null,
-            $_POST['webstorage_id'] ?: null,
-            $_POST['id']
-        ]);
+        error_log("Form submission: price=$price, type=$service_type, vps=$vps_id, ws=$webstorage_id");
+        
+        if (empty($service_type)) {
+            $error = "A szolgáltatás típusa megadása kötelező!";
+        } elseif ($price <= 0) {
+            $error = "Az árnak pozitívnak kell lennie!";
+        } else {
+            if (isset($_POST['create'])) {
+                if (createService($price, $service_type, $vps_id, $webstorage_id)) {
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit();
+                } else {
+                    $error = "Hiba történt a szolgáltatás létrehozásakor! Kérjük, ellenőrizze a naplófájlt a részletes hibaüzenetért.";
+                }
+            } else {
+                $id = (int)$_POST['id'];
+                if (updateService($id, $price, $service_type, $vps_id, $webstorage_id)) {
+                    header("Location: " . $_SERVER['PHP_SELF']);
+                    exit();
+                } else {
+                    $error = "Hiba történt a szolgáltatás frissítésekor!";
+                }
+            }
+        }
     }
 } elseif (isset($_GET['delete'])) {
-    $stmt = $connect->prepare("DELETE FROM ATTILA.Service WHERE id = ?");
-    $stmt->execute([$_GET['delete']]);
+    $id = (int)$_GET['delete'];
+    if (deleteService($id)) {
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    } else {
+        $error = "Hiba történt a szolgáltatás törlésekor!";
+    }
 }
 
 $editRow = null;
 if (isset($_GET['edit'])) {
-    $stmt = $connect->prepare("SELECT * FROM ATTILA.Service WHERE id = ?");
-    $stmt->execute([$_GET['edit']]);
-    $editRow = $stmt->fetch(PDO::FETCH_ASSOC);
+    $id = (int)$_GET['edit'];
+    $editRow = getService($id);
 }
 
-$stmt = $connect->prepare("SELECT s.*, v.server_specs, w.storage_space as webstorage_size 
-                          FROM ATTILA.Service s
-                          LEFT JOIN ATTILA.VPS v ON s.vps_id = v.id 
-                          LEFT JOIN ATTILA.Webstorage w ON s.webstorage_id = w.id
-                          ORDER BY s.id");
-$stmt->execute();
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$rows = getAllServices();
+$vpsOptions = getVPSServers();
+$webstorageOptions = getWebStorageOptions();
+
+printMenu();
 ?>
 
-<h1>Services</h1>
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szolgáltatások Kezelése</title>
+    <style>
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; }
+        .form-group input[type="number"],
+        .form-group select { width: 100%; padding: 8px; }
+        .btn { padding: 8px 15px; cursor: pointer; }
+        .error { color: red; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #f5f5f5; }
+        .actions { white-space: nowrap; }
+        .actions a { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Szolgáltatások Kezelése</h1>
 
-<form method="POST">
-    <h2><?= isset($_GET['edit']) ? 'Update' : 'Create' ?> Service</h2>
-    <input type="hidden" name="id" value="<?= $editRow['ID'] ?? '' ?>">
-    
-    Ár: <input type="number" step="0.01" name="price" required value="<?= $editRow['PRICE'] ?? '' ?>"><br>
-    
-    Service típus: 
-    <select name="service_type" required>
-        <option value="">-- Select típus --</option>
-        <option value="VPS" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'VPS' ? 'selected' : '' ?>>VPS</option>
-        <option value="Webstorage" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'Webstorage' ? 'selected' : '' ?>>Webstorage</option>
-        <option value="Bundle" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'Bundle' ? 'selected' : '' ?>>Bundle</option>
-    </select><br>
-    
-    VPS: 
-    <select name="vps_id">
-        <option value="">-- VPS --</option>
-        <?php foreach ($vpsOptions as $vps): ?>
-            <option value="<?= $vps['ID'] ?>" 
-                <?= isset($editRow['VPS_ID']) && $editRow['VPS_ID'] == $vps['ID'] ? 'selected' : '' ?>>
-                <?= $vps['SERVER_SPECS'] ?>
-            </option>
-        <?php endforeach; ?>
-    </select><br>
-    
-    Webstorage: 
-    <select name="webstorage_id">
-        <option value="">-- Webstorage --</option>
-        <?php foreach ($webstorageOptions as $ws): ?>
-            <option value="<?= $ws['ID'] ?>" 
-                <?= isset($editRow['WEBSTORAGE_ID']) && $editRow['WEBSTORAGE_ID'] == $ws['ID'] ? 'selected' : '' ?>>
-                <?= $ws['STORAGE_SPACE'] ?>
-            </option>
-        <?php endforeach; ?>
-    </select><br>
-    
-    <?php if (isset($_GET['edit'])): ?>
-        <input type="submit" name="update" value="Frissítés">
-        <a href="?">Cancel</a>
-    <?php else: ?>
-        <input type="submit" name="create" value="Létrehozás">
-    <?php endif; ?>
-</form>
+        <?php if (isset($error)): ?>
+            <div class="error"><?= $error ?></div>
+        <?php endif; ?>
 
-<table border="1">
-    <tr>
-        <th>Ár</th>
-        <th>Service típus</th>
-        <th>VPS</th>
-        <th>Webstorage</th>
-    </tr>
-    <?php foreach ($rows as $row): ?>
-    <tr>
-        <td><?= $row['PRICE'] ?></td>
-        <td><?= $row['SERVICE_TYPE'] ?></td>
-        <td><?= $row['SERVER_SPECS'] ?? 'Nincs' ?></td>
-        <td><?= $row['WEBSTORAGE_SIZE'] ?? 'Nincs' ?></td>
-        <td>
-            <a href="?edit=<?= $row['ID'] ?>">Szerkesztés</a>
-            <a href="?delete=<?= $row['ID'] ?>" onclick="return confirm('Biztos?')">Törlés</a>
-        </td>
-    </tr>
-    <?php endforeach; ?>
-</table>
+        <form method="POST" class="form">
+            <h2><?= isset($_GET['edit']) ? 'Szolgáltatás Frissítése' : 'Új Szolgáltatás Létrehozása' ?></h2>
+            <input type="hidden" name="id" value="<?= $editRow['ID'] ?? '' ?>">
+            
+            <div class="form-group">
+                <label for="price">Ár:</label>
+                <input type="number" id="price" name="price" step="0.01" min="0" required 
+                       value="<?= $editRow['PRICE'] ?? '' ?>">
+            </div>
+            
+            <div class="form-group">
+                <label for="service_type">Szolgáltatás típusa:</label>
+                <select id="service_type" name="service_type" required>
+                    <option value="">-- Válasszon típust --</option>
+                    <option value="VPS" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'VPS' ? 'selected' : '' ?>>VPS</option>
+                    <option value="Webstorage" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'Webstorage' ? 'selected' : '' ?>>Webstorage</option>
+                    <option value="Bundle" <?= isset($editRow['SERVICE_TYPE']) && $editRow['SERVICE_TYPE'] == 'Bundle' ? 'selected' : '' ?>>Bundle</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="vps_id">VPS:</label>
+                <select id="vps_id" name="vps_id">
+                    <option value="">-- Válasszon VPS-t --</option>
+                    <?php foreach ($vpsOptions as $vps): ?>
+                        <option value="<?= $vps['ID'] ?>" 
+                            <?= isset($editRow['VPS_ID']) && $editRow['VPS_ID'] == $vps['ID'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($vps['SERVER_SPECS']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="webstorage_id">Webstorage:</label>
+                <select id="webstorage_id" name="webstorage_id">
+                    <option value="">-- Válasszon Webstorage-t --</option>
+                    <?php foreach ($webstorageOptions as $ws): ?>
+                        <option value="<?= $ws['ID'] ?>" 
+                            <?= isset($editRow['WEBSTORAGE_ID']) && $editRow['WEBSTORAGE_ID'] == $ws['ID'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($ws['STORAGE_SPACE']) ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <?php if (isset($_GET['edit'])): ?>
+                <input type="submit" name="update" value="Frissítés" class="btn">
+                <a href="?" class="btn">Mégse</a>
+            <?php else: ?>
+                <input type="submit" name="create" value="Létrehozás" class="btn">
+            <?php endif; ?>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Ár</th>
+                    <th>Szolgáltatás típusa</th>
+                    <th>VPS</th>
+                    <th>Webstorage</th>
+                    <th>Műveletek</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($rows)): ?>
+                    <tr>
+                        <td colspan="5">Nincsenek szolgáltatás bejegyzések.</td>
+                    </tr>
+                <?php else: ?>
+                    <?php foreach ($rows as $row): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['PRICE']) ?></td>
+                            <td><?= htmlspecialchars($row['SERVICE_TYPE']) ?></td>
+                            <td><?= htmlspecialchars($row['SERVER_SPECS'] ?? 'Nincs') ?></td>
+                            <td><?= htmlspecialchars($row['WEBSTORAGE_SIZE'] ?? 'Nincs') ?></td>
+                            <td class="actions">
+                                <a href="?edit=<?= $row['ID'] ?>" class="btn">Szerkesztés</a>
+                                <a href="?delete=<?= $row['ID'] ?>" 
+                                   onclick="return confirm('Biztosan törölni szeretnéd?')" 
+                                   class="btn">Törlés</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
