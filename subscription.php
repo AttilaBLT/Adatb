@@ -90,10 +90,14 @@ function getSubscription($id) {
 function getAllSubscriptions() {
     global $connect;
     try {
-        $sql = "SELECT s.*, u.username 
-                FROM ATTILA.Subscription s 
-                LEFT JOIN ATTILA.Users u ON s.user_id = u.user_id 
-                ORDER BY s.id";
+        $sql = "SELECT S.ID, S.USER_ID, S.START_DATE, S.END_DATE, S.STATUS, S.SERVICE_ID,
+                U.USERNAME, 
+                (SELECT COUNT(*) 
+                FROM ATTILA.SUBSCRIPTION 
+                WHERE USER_ID = S.USER_ID) AS TOTAL_SUBSCRIPTIONS
+                FROM ATTILA.SUBSCRIPTION S
+                LEFT JOIN ATTILA.USERS U ON S.USER_ID = U.USER_ID
+                ORDER BY S.ID";
         $stmt = $connect->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -278,6 +282,13 @@ if (function_exists('printMenu')) printMenu();
             <?php endif; ?>
         </form>
 
+        <?php
+
+            $allSubscriptions = getAllSubscriptions();
+            echo sprintf('<p>Összes előfizetés: %d</p>', htmlspecialchars($allSubscriptions[0]['TOTAL_SUBSCRIPTIONS'])); 
+        
+        ?>
+
         <table>
             <thead>
                 <tr>
@@ -301,7 +312,7 @@ if (function_exists('printMenu')) printMenu();
                         foreach ($serviceOptions as $service) {
                             if ($service['ID'] == $row['SERVICE_ID']) {
                                 $serviceDetails = (!empty($service['SERVER_SPECS']) ? 'VPS: ' . htmlspecialchars($service['SERVER_SPECS']) : 'VPS: Nincs') . ' | ' .
-                                                (!empty($service['WEBSTORAGE_SIZE']) ? 'Webstorage: ' . htmlspecialchars($service['WEBSTORAGE_SIZE']) . ' MB' : 'Webstorage: Nincs') . ' | ' .
+                                                (!empty($service['WEBSTORAGE_SIZE']) ? 'Webstorage: ' . htmlspecialchars($service['WEBSTORAGE_SIZE']) . ' GB' : 'Webstorage: Nincs') . ' | ' .
                                                 'Ár: ' . htmlspecialchars($service['PRICE']) . ' Ft';
                                 break;
                             }
@@ -325,5 +336,4 @@ if (function_exists('printMenu')) printMenu();
             </tbody>
         </table>
     </div>
-</body>
-</html>
+    <?php include 'html/footer.html'; ?>

@@ -29,3 +29,6 @@ if ($result) {
 } else {
     echo "Nem tudom megjeleníteni a profilod!";
 }
+
+include 'html/footer.html';
+?>

@@ -89,16 +89,20 @@ function getPayment($payment_id) {
 function getAllPayments() {
     global $connect;
     try {
-        $sql = "SELECT p.*, u.username, s.service_id, sv.price, sv.service_type, 
-                       v.server_specs, w.storage_space as webstorage_size,
-                       s.start_date, s.end_date
-                FROM ATTILA.Payment p 
-                LEFT JOIN ATTILA.Users u ON p.user_id = u.user_id 
-                LEFT JOIN ATTILA.Subscription s ON p.subscription_id = s.id
-                LEFT JOIN ATTILA.Service sv ON s.service_id = sv.id
-                LEFT JOIN ATTILA.VPS v ON sv.vps_id = v.id
-                LEFT JOIN ATTILA.Webstorage w ON sv.webstorage_id = w.id
-                ORDER BY p.payment_id";
+        $sql = "SELECT P.PAYMENT_ID, P.AMOUNT, P.DUE_DATE, P.METHOD, S.START_DATE, S.END_DATE,
+       U.USERNAME, 
+       S.SERVICE_ID, SV.PRICE, SV.SERVICE_TYPE, 
+       V.SERVER_SPECS, W.STORAGE_SPACE AS WEBSTORAGE_SIZE,
+       (SELECT SUM(AMOUNT) 
+        FROM ATTILA.PAYMENT 
+        WHERE USER_ID = P.USER_ID) AS TOTAL_PAYMENTS
+        FROM ATTILA.PAYMENT P
+        LEFT JOIN ATTILA.USERS U ON P.USER_ID = U.USER_ID
+        LEFT JOIN ATTILA.SUBSCRIPTION S ON P.SUBSCRIPTION_ID = S.ID
+        LEFT JOIN ATTILA.SERVICE SV ON S.SERVICE_ID = SV.ID
+        LEFT JOIN ATTILA.VPS V ON SV.VPS_ID = V.ID
+        LEFT JOIN ATTILA.WEBSTORAGE W ON SV.WEBSTORAGE_ID = W.ID
+        ORDER BY P.PAYMENT_ID";
         $stmt = $connect->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -304,6 +308,13 @@ if (function_exists('printMenu')) printMenu();
             <?php endif; ?>
         </form>
 
+        <?php
+
+        $payment = getAllPayments();
+        echo sprintf('<p>Teljes összeg: %d</p>', htmlspecialchars($payment[0]['TOTAL_PAYMENTS']) ?? 0); 
+
+        ?>
+
         <table>
             <thead>
                 <tr>
@@ -367,5 +378,4 @@ if (function_exists('printMenu')) printMenu();
             }
         });
     </script>
-</body>
-</html>
+<?php include 'html/footer.html'; ?>

@@ -17,24 +17,25 @@ if (isset($_SESSION['errormessage']))
 
 ?>
 
-    <main>
-        <div class="registration-form">
+<main>
+    <div class="login-container">
+        <div class="login-box">
             <h2>Bejelentkezés</h2>
             <form action="php/loginCheck.php" method="post">
-                <div class="form-group">
+                <div class="input-container">
                     <label for="email">Email:</label>
-                    <input type="text" id="email" name="email" class="adatok" required>
+                    <input type="text" id="email" name="email" required>
                 </div>
-                <div class="form-group">
+                <div class="input-container">
                     <label for="password">Jelszó:</label>
-                    <input type="password" id="password" name="password" class="adatok" required>
+                    <input type="password" id="password" name="password" required>
                 </div>
-                <div class="form-group">
-                    <a href="register.php" id="not-registered">Még nem regisztráltál?</a>
+                <button type="submit" class="login-button">Bejelentkezés</button>
+                <div class="register-link">
+                    <a href="register.php">Még nem regisztráltál?</a>
                 </div>
-                <button type="submit">Bejelentkezés</button>
             </form>
         </div>
-    </main>
-</body>
-</html>
+    </div>
+</main>
+<?php include 'html/footer.html'; ?>

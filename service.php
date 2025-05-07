@@ -57,11 +57,16 @@ function getService($id) {
 function getAllServices() {
     global $connect;
     try {
-        $stmt = $connect->prepare("SELECT s.*, v.server_specs, w.storage_space as webstorage_size 
-                                 FROM ATTILA.Service s
-                                 LEFT JOIN ATTILA.VPS v ON s.vps_id = v.id 
-                                 LEFT JOIN ATTILA.Webstorage w ON s.webstorage_id = w.id
-                                 ORDER BY s.id");
+        $stmt = $connect->prepare("SELECT S.ID, S.SERVICE_TYPE, S.PRICE, 
+                                        V.SERVER_SPECS, 
+                                        W.STORAGE_SPACE AS WEBSTORAGE_SIZE,
+                                        (SELECT COUNT(*) 
+                                        FROM ATTILA.SERVICE 
+                                        WHERE SERVICE_TYPE = S.SERVICE_TYPE) AS TOTAL_SERVICES
+                                        FROM ATTILA.SERVICE S
+                                        LEFT JOIN ATTILA.VPS V ON S.VPS_ID = V.ID
+                                        LEFT JOIN ATTILA.WEBSTORAGE W ON S.WEBSTORAGE_ID = W.ID
+                                        ORDER BY S.ID");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -236,6 +241,13 @@ printMenu();
             <?php endif; ?>
         </form>
 
+        <?php
+
+        $allVPS = getAllServices();
+        echo sprintf('<p>Összes VPS: %d</p>', htmlspecialchars($allVPS[0]['TOTAL_SERVICES'])); 
+
+        ?>
+
         <table>
             <thead>
                 <tr>
@@ -270,5 +282,4 @@ printMenu();
             </tbody>
         </table>
     </div>
-</body>
-</html>
+    <?php include 'html/footer.html'; ?>

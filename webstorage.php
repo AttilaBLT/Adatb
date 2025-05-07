@@ -183,5 +183,4 @@ printMenu();
             </tbody>
         </table>
     </div>
-</body>
-</html>
+    <?php include 'html/footer.html'; ?>

@@ -224,5 +224,4 @@ printMenu();
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
-</body>
-</html>
+    <?php include 'html/footer.html'; ?>

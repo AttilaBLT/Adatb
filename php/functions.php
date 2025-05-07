@@ -5,21 +5,31 @@ function printMenu(){
     $menu = file_get_contents('html/header.html');    
     if (isset($_SESSION['user']['id']))
     {
-        $menu = str_replace('::login',' <a href="index.php" class="nav-link">Főoldal</a>
-                                        <a href="profile.php" class="nav-link">Profil</a>                              
-                                        <a href="kosar.php" class="nav-link">Kosár tartalma</a>
-                                        <a href="faq.php" class="nav-link">FAQ</a>
-                                        <a href="webstorage.php" class="nav-link">Webstorage</a>
-                                        <a href="vps.php" class="nav-link">VPS</a>
-                                        <a href="website.php" class="nav-link">Website</a>
-                                        <a href="service.php" class="nav-link">Service</a>
-                                        <a href="subscription.php" class="nav-link">Subscription</a>
-                                        <a href="payment.php" class="nav-link">Payment</a>
-                                        <a class="nav-link" href="php/logout.php">Kilépés</a>',$menu);  
+        $menu = str_replace('::login', '
+            <li><a href="index.php">Kezdőlap</a></li>
+            <li class="dropdown">
+                <a href="#">Bérlés</a>
+                <ul class="dropdown-menu">
+                    <li><a href="vps.php">VPS</a></li>
+                    <li><a href="webstorage.php">Webstorage</a></li>
+                </ul>
+            </li>
+            <li><a href="faq.php">GYIK</a></li>
+            <li class="dropdown profile">
+                <a href="#">Profil</a>
+                <ul class="dropdown-menu">
+                    <li><a href="profile.php">Profilom</a></li>
+                    <li><a href="profile_edit.php">Módosítás</a></li>
+                    <li><a href="php/logout.php">Kilépés</a></li>
+                </ul>
+            </li>
+            <button class="dark-mode-toggle">🌙</button>', $menu);  
     } 
     else
     {
-        $menu = str_replace('::login','<a href="login.php" class="nav-link">Bejelentkezés</a><a href="register.php" class="nav-link">Regisztráció</a>',$menu);
+        $menu = str_replace('::login', '
+            <li><a href="login.php">Bejelentkezés</a></li>
+            <li><a href="register.php">Regisztráció</a></li>', $menu);
     }
     echo $menu;
 }
