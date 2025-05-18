@@ -3,8 +3,6 @@ require_once 'php/connection.php';
 require_once 'php/functions.php';
 printMenu();
 
-var_dump($_SESSION);
-
 $stmt = $connect->prepare(" SELECT n.MESSAGE, n.CREATED_AT, s.END_DATE, (SELECT COUNT(*) 
     FROM ATTILA.NOTIFICATIONS 
     WHERE USER_ID = n.USER_ID) AS total_notifications
