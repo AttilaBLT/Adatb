@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
     $email = $_POST['email'];
     $password = $_POST['password'];
 
-    $search = $connect->prepare("SELECT USER_ID, USERNAME, PASSWORD_HASH FROM ATTILA.USERS WHERE EMAIL=:email");
+    $search = $connect->prepare("SELECT USER_ID, USERNAME, PASSWORD_HASH, ROLE FROM ATTILA.USERS WHERE EMAIL=:email");
     $search->bindParam(':email', $email, PDO::PARAM_STR);
     $search->execute();
     $result = $search->fetch(PDO::FETCH_ASSOC);
@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST')
     {
         $_SESSION['user']['id'] = $result['USER_ID'];
         $_SESSION['user']['username'] = $result['USERNAME'];
+        $_SESSION['user']['role'] = $result['ROLE'];
     } 
     else 
     {
