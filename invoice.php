@@ -86,7 +86,10 @@ $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p><strong>Összeg:</strong> <span id="amount"></span> Ft</p>
         </div>
     </div>
+    <button id="download_invoice" class="btn" style="display: none; margin-top: 20px;" onclick="downloadInvoice()">Számla letöltése</button>
 </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
     .container {
@@ -188,6 +191,20 @@ function generateInvoice() {
     document.getElementById('payment_method').textContent = payment.METHOD;
     document.getElementById('amount').textContent = payment.AMOUNT;
     document.getElementById('invoice_details').style.display = 'block';
+    document.getElementById('download_invoice').style.display = 'block';
+}
+
+function downloadInvoice() {
+    const element = document.getElementById('invoice_details');
+    const opt = {
+        margin: 1,
+        filename: `szamla-${document.getElementById('invoice_number').textContent}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save();
 }
 </script>
 
