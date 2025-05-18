@@ -89,7 +89,8 @@ $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <button id="download_invoice" class="btn" style="display: none; margin-top: 20px;" onclick="downloadInvoice()">Számla letöltése</button>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
     .container {
@@ -143,6 +144,8 @@ $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     .customer-info, .service-details, .payment-details {
         margin-bottom: 20px;
         padding-bottom: 20px;
+    }
+    .customer-info, .service-details {
         border-bottom: 1px solid #ddd;
     }
     h2 {
@@ -195,16 +198,48 @@ function generateInvoice() {
 }
 
 function downloadInvoice() {
-    const element = document.getElementById('invoice_details');
-    const opt = {
-        margin: 1,
-        filename: `szamla-${document.getElementById('invoice_number').textContent}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
+    const invoiceElement = document.getElementById('invoice_details');
+    const invoiceNumber = document.getElementById('invoice_number').textContent;
+    
+    // Show loading state
+    const downloadButton = document.getElementById('download_invoice');
+    const originalText = downloadButton.textContent;
+    downloadButton.textContent = 'Generálás...';
+    downloadButton.disabled = true;
 
-    html2pdf().set(opt).from(element).save();
+    html2canvas(invoiceElement, {
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Calculate dimensions to fit the content properly
+        const imgWidth = 210; // A4 width in mm
+        const pageHeight = 297; // A4 height in mm
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        
+        // Add the image to the PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+
+        // Save the PDF
+        pdf.save(`szamla-${invoiceNumber}.pdf`);
+
+        // Reset button state
+        downloadButton.textContent = originalText;
+        downloadButton.disabled = false;
+    }).catch(error => {
+        console.error('PDF generation failed:', error);
+        downloadButton.textContent = originalText;
+        downloadButton.disabled = false;
+        alert('A PDF generálása sikertelen volt. Kérjük, próbálja újra.');
+    });
 }
 </script>
 
