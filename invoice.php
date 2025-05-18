@@ -12,10 +12,20 @@ $sql = "SELECT P.PAYMENT_ID, P.AMOUNT, P.DUE_DATE, P.METHOD, S.START_DATE, S.END
         LEFT JOIN ATTILA.SERVICE SV ON S.SERVICE_ID = SV.ID
         LEFT JOIN ATTILA.VPS V ON SV.VPS_ID = V.ID
         LEFT JOIN ATTILA.WEBSTORAGE W ON SV.WEBSTORAGE_ID = W.ID
-        LEFT JOIN ATTILA.USERS U ON P.USER_ID = U.USER_ID
-        ORDER BY P.PAYMENT_ID";
+        LEFT JOIN ATTILA.USERS U ON P.USER_ID = U.USER_ID";
+
+if (!isAdmin()) {
+    $sql .= " WHERE P.USER_ID = :user_id";
+}
+
+$sql .= " ORDER BY P.PAYMENT_ID";
 
 $stmt = $connect->prepare($sql);
+
+if (!isAdmin()) {
+    $stmt->bindParam(':user_id', $_SESSION['user']['id']);
+}
+
 $stmt->execute();
 $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
@@ -201,14 +211,13 @@ function downloadInvoice() {
     const invoiceElement = document.getElementById('invoice_details');
     const invoiceNumber = document.getElementById('invoice_number').textContent;
     
-    // Show loading state
     const downloadButton = document.getElementById('download_invoice');
     const originalText = downloadButton.textContent;
     downloadButton.textContent = 'Generálás...';
     downloadButton.disabled = true;
 
     html2canvas(invoiceElement, {
-        scale: 2, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff'
@@ -220,18 +229,13 @@ function downloadInvoice() {
             format: 'a4'
         });
 
-        // Calculate dimensions to fit the content properly
-        const imgWidth = 210; // A4 width in mm
-        const pageHeight = 297; // A4 height in mm
+        const imgWidth = 210;
+        const pageHeight = 297;
         const imgHeight = canvas.height * imgWidth / canvas.width;
-        
-        // Add the image to the PDF
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
 
-        // Save the PDF
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         pdf.save(`szamla-${invoiceNumber}.pdf`);
 
-        // Reset button state
         downloadButton.textContent = originalText;
         downloadButton.disabled = false;
     }).catch(error => {
