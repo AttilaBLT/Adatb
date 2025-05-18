@@ -2,6 +2,11 @@
 require_once 'php/connection.php';
 require_once 'php/functions.php';
 
+if (!isAdmin()) { 
+    header("Location: index.php");
+    exit(); 
+}
+
 function createVPS($server_specs) {
     global $connect;
     try {

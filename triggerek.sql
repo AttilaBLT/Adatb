@@ -78,19 +78,42 @@ BEGIN
 END;
 /
 
-CREATE OR REPLACE TRIGGER DeleteNotificationsOnWebstorageDelete
+create or replace TRIGGER DeleteNotifyOnWebstorage
 AFTER DELETE ON ATTILA.SERVICE
 FOR EACH ROW
-WHEN (OLD.SERVICE_TYPE = 'Webstorage')
 BEGIN
     DELETE FROM ATTILA.NOTIFICATIONS
-    WHERE SUBSCRIPTION_ID IN (
-        SELECT ID
-        FROM ATTILA.SUBSCRIPTION
-        WHERE SERVICE_ID = :OLD.ID
+    WHERE USER_ID IN (
+        SELECT USER_ID
+        FROM ATTILA.SUBSCRIPTION s
+        JOIN ATTILA.SERVICE srv ON s.SERVICE_ID = srv.ID
+        WHERE srv.WEBSTORAGE_ID = :OLD.ID
     );
 
     DELETE FROM ATTILA.SUBSCRIPTION
-    WHERE SERVICE_ID = :OLD.ID;
+    WHERE SERVICE_ID IN (
+        SELECT ID
+        FROM ATTILA.SERVICE
+        WHERE WEBSTORAGE_ID = :OLD.ID
+    );
+END;
+
+
+
+create or replace PROCEDURE get_user_services(
+    p_user_id IN NUMBER,
+    p_cursor OUT SYS_REFCURSOR
+) AS
+BEGIN
+    OPEN p_cursor FOR
+        SELECT sub.ID AS subscription_id,
+               srv.SERVICE_TYPE,
+               srv.PRICE,
+               sub.START_DATE,
+               sub.END_DATE,
+               sub.STATUS
+        FROM ATTILA.SUBSCRIPTION sub
+        JOIN ATTILA.SERVICE srv ON sub.SERVICE_ID = srv.ID
+        WHERE sub.USER_ID = p_user_id;
 END;
 /

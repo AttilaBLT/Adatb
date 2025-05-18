@@ -2,6 +2,11 @@
 require_once 'php/connection.php';
 require_once 'php/functions.php';
 
+if (!isAdmin()) { 
+    header("Location: index.php");
+    exit(); 
+}
+
 function createService($price, $service_type, $vps_id, $webstorage_id) {
     global $connect;
     try {

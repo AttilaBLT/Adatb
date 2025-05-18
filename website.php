@@ -2,22 +2,22 @@
 require_once 'php/connection.php';
 require_once 'php/functions.php';
 
-function createWebsite($user_id, $server_id, $address) {
+function createWebsite($user_id, $webstorage_id, $address) {
     global $connect;
     try {
-        $stmt = $connect->prepare("INSERT INTO ATTILA.Website (user_id, server_id, address) VALUES (?, ?, ?)");
-        return $stmt->execute([$user_id, $server_id, $address]);
+        $stmt = $connect->prepare("INSERT INTO ATTILA.WEBSITE (USER_ID, WEBSTORAGE_ID, ADDRESS) VALUES (?, ?, ?)");
+        return $stmt->execute([$user_id, $webstorage_id, $address]);
     } catch (PDOException $e) {
         error_log("Website creation error: " . $e->getMessage());
         return false;
     }
 }
 
-function updateWebsite($id, $user_id, $server_id, $address) {
+function updateWebsite($id, $user_id, $webstorage_id, $address) {
     global $connect;
     try {
-        $stmt = $connect->prepare("UPDATE ATTILA.Website SET user_id = ?, server_id = ?, address = ? WHERE id = ?");
-        return $stmt->execute([$user_id, $server_id, $address, $id]);
+        $stmt = $connect->prepare("UPDATE ATTILA.WEBSITE SET USER_ID = ?, WEBSTORAGE_ID = ?, ADDRESS = ? WHERE ID = ?");
+        return $stmt->execute([$user_id, $webstorage_id, $address, $id]);
     } catch (PDOException $e) {
         error_log("Website update error: " . $e->getMessage());
         return false;
@@ -27,7 +27,7 @@ function updateWebsite($id, $user_id, $server_id, $address) {
 function deleteWebsite($id) {
     global $connect;
     try {
-        $stmt = $connect->prepare("DELETE FROM ATTILA.Website WHERE id = ?");
+        $stmt = $connect->prepare("DELETE FROM ATTILA.WEBSITE WHERE ID = ?");
         return $stmt->execute([$id]);
     } catch (PDOException $e) {
         error_log("Website deletion error: " . $e->getMessage());
@@ -38,7 +38,7 @@ function deleteWebsite($id) {
 function getWebsite($id) {
     global $connect;
     try {
-        $stmt = $connect->prepare("SELECT * FROM ATTILA.Website WHERE id = ?");
+        $stmt = $connect->prepare("SELECT * FROM ATTILA.WEBSITE WHERE ID = ?");
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -50,11 +50,11 @@ function getWebsite($id) {
 function getAllWebsites() {
     global $connect;
     try {
-        $stmt = $connect->prepare("SELECT w.*, v.server_specs, u.username 
-                                 FROM ATTILA.Website w 
-                                 LEFT JOIN ATTILA.VPS v ON w.server_id = v.id 
-                                 LEFT JOIN ATTILA.Users u ON w.user_id = u.user_id
-                                 ORDER BY w.id");
+        $stmt = $connect->prepare("SELECT w.*, ws.STORAGE_SPACE, u.USERNAME 
+                                 FROM ATTILA.WEBSITE w 
+                                 LEFT JOIN ATTILA.WEBSTORAGE ws ON w.WEBSTORAGE_ID = ws.ID 
+                                 LEFT JOIN ATTILA.USERS u ON w.USER_ID = u.USER_ID
+                                 ORDER BY w.ID");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
@@ -75,16 +75,28 @@ function getVPSServers() {
     }
 }
 
+function getWebstorages() {
+    global $connect;
+    try {
+        $stmt = $connect->prepare("SELECT id, storage_space FROM ATTILA.WEBSTORAGE ORDER BY id");
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Webstorage list retrieval error: " . $e->getMessage());
+        return [];
+    }
+}
+
 function sanitizeInput($data) {
     return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['create']) || isset($_POST['update'])) {
-        $server_id = (int)$_POST['server_id'];
+        $webstorage_id = (int)$_POST['webstorage_id'];
         $address = sanitizeInput($_POST['address']);
         
-        if (empty($address) || $server_id <= 0) {
+        if (empty($address) || $webstorage_id <= 0) {
             $error = "A cím és a szerver mezők kitöltése kötelező!";
         } else {
             if (!isset($_SESSION['user'])) {
@@ -95,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = "Hibás felhasználói adatok!";
                 } else {
                     if (isset($_POST['create'])) {
-                        if (createWebsite($currentUser['id'], $server_id, $address)) {
+                        if (createWebsite($currentUser['id'], $webstorage_id, $address)) {
                             header("Location: " . $_SERVER['PHP_SELF']);
                             exit();
                         } else {
@@ -103,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                     } else {
                         $id = (int)$_POST['id'];
-                        if (updateWebsite($id, $currentUser['id'], $server_id, $address)) {
+                        if (updateWebsite($id, $currentUser['id'], $webstorage_id, $address)) {
                             header("Location: " . $_SERVER['PHP_SELF']);
                             exit();
                         } else {
@@ -132,6 +144,7 @@ if (isset($_GET['edit'])) {
 
 $rows = getAllWebsites();
 $vpsOptions = getVPSServers();
+$webstorageOptions = getWebstorages();
 
 printMenu();
 ?>
@@ -170,20 +183,20 @@ printMenu();
             <input type="hidden" name="id" value="<?= $editRow['ID'] ?? '' ?>">
             
             <div class="form-group">
-                <label for="server_id">Szerver:</label>
-                <select id="server_id" name="server_id" required>
-                    <option value="">-- Válasszon ki egy szervert --</option>
-                    <?php foreach ($vpsOptions as $vps): ?>
-                        <option value="<?= $vps['ID'] ?>" 
-                            <?= isset($editRow['SERVER_ID']) && $editRow['SERVER_ID'] == $vps['ID'] ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($vps['SERVER_SPECS']) ?>
+                <label for="webstorage_id">Webtárhely:</label>
+                <select id="webstorage_id" name="webstorage_id" required>
+                    <option value="">-- Válasszon ki egy webtárhelyet --</option>
+                    <?php foreach ($webstorageOptions as $ws): ?>
+                        <option value="<?= $ws['ID'] ?>"
+                            <?= isset($editRow['WEBSTORAGE_ID']) && $editRow['WEBSTORAGE_ID'] == $ws['ID'] ? 'selected' : '' ?>>
+                            <?= htmlspecialchars($ws['STORAGE_SPACE']) ?> MB
                         </option>
                     <?php endforeach; ?>
                 </select>
             </div>
             
             <div class="form-group">
-                <label for="address">Cím:</label>
+                <label for="address">Domain:</label>
                 <input type="text" id="address" name="address" required 
                        value="<?= $editRow['ADDRESS'] ?? '' ?>">
             </div>
@@ -200,7 +213,7 @@ printMenu();
             <thead>
                 <tr>
                     <th>Felhasználó</th>
-                    <th>Szerver</th>
+                    <th>Webtárhely</th>
                     <th>Cím</th>
                     <th>Műveletek</th>
                 </tr>
@@ -214,7 +227,7 @@ printMenu();
                     <?php foreach ($rows as $row): ?>
                         <tr>
                             <td><?= htmlspecialchars($row['USERNAME']) ?></td>
-                            <td><?= htmlspecialchars($row['SERVER_SPECS'] ?? 'Nincs') ?></td>
+                            <td><?= htmlspecialchars($row['STORAGE_SPACE'] ?? 'Nincs') ?> MB</td>
                             <td><?= htmlspecialchars($row['ADDRESS']) ?></td>
                             <td class="actions">
                                 <a href="?edit=<?= $row['ID'] ?>" class="btn">Szerkesztés</a>

@@ -2,6 +2,11 @@
 require_once 'php/connection.php';
 require_once 'php/functions.php';
 
+if (!isAdmin()) { 
+    header("Location: index.php");
+    exit(); 
+}
+
 function createWebstorage($storage_space) {
     global $connect;
     try {
@@ -170,7 +175,7 @@ printMenu();
                 <?php else: ?>
                     <?php foreach ($rows as $row): ?>
                         <tr>
-                            <td><?= htmlspecialchars($row['STORAGE_SPACE']) ?></td>
+                            <td><?= htmlspecialchars($row['STORAGE_SPACE']) ?> GB</td>
                             <td class="actions">
                                 <a href="?edit=<?= $row['ID'] ?>" class="btn">Szerkesztés</a>
                                 <a href="?delete=<?= $row['ID'] ?>" 
