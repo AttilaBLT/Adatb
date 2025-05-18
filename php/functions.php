@@ -33,6 +33,7 @@ function printMenu(){
             . $adminMenu .
             '<li><a href="subscription.php">Előfizetés</a></li>
             <li><a href="faq.php">GYIK</a></li>
+            <li><a href="invoice.php">Számla generálás</a></li>
             <li class="dropdown profile">
                 <a href="#">Profil</a>
                 <ul class="dropdown-menu">'

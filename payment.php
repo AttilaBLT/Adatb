@@ -101,9 +101,19 @@ function getAllPayments() {
         LEFT JOIN ATTILA.SUBSCRIPTION S ON P.SUBSCRIPTION_ID = S.ID
         LEFT JOIN ATTILA.SERVICE SV ON S.SERVICE_ID = SV.ID
         LEFT JOIN ATTILA.VPS V ON SV.VPS_ID = V.ID
-        LEFT JOIN ATTILA.WEBSTORAGE W ON SV.WEBSTORAGE_ID = W.ID
-        ORDER BY P.PAYMENT_ID";
+        LEFT JOIN ATTILA.WEBSTORAGE W ON SV.WEBSTORAGE_ID = W.ID";
+        if (!isAdmin()) {
+            $sql .= " WHERE P.USER_ID = :user_id";
+        }
+
+        $sql .= " ORDER BY P.PAYMENT_ID";
+        
         $stmt = $connect->prepare($sql);
+        
+        if (!isAdmin()) {
+            $stmt->bindParam(':user_id', $_SESSION['user']['id']);
+        }
+        
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
